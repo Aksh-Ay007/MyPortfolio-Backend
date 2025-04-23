@@ -1,104 +1,101 @@
 const mongoose = require("mongoose");
-const validator = require('validator');
-const bcrypt = require('bcrypt');
-const jwt= require('jsonwebtoken');
+const validator = require("validator");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new mongoose.Schema({
-
     firstName: {
         type: String,
         required: true,
-        minLength: [2, "First name must be at least 2 characters long"],
-        trim:true
+        minLength: 3,
+        trim: true // Trim whitespace
     },
     lastName: {
         type: String,
-        required: true,
-        minLength: [2, "Last name must be at least 2 characters long"],
-        trim:true
+        trim: true // Add trim for last name as well
     },
-    emailId: {
+    email: {
         type: String,
         required: true,
         unique: true,
         validate(value) {
             if (!validator.isEmail(value)) {
-              throw new Error('Invalid email address: ' + value);
+                throw new Error("Invalid email address: " + value);
             }
-          },
+        },
     },
     password: {
         type: String,
         required: true,
-        minLength: [6, "Password must be at least 6 characters long"],
-        select: false, // Do not include password in queries by default
     },
     gender: {
         type: String,
-        enum: {
-          values: ['male', 'female', 'others'],
-          message: `{VALUE} is not a valid gender type`
-        },
-        set: value => value.toLowerCase(), // Convert to lowercase
-        default: 'others' // Provide a default value
-      },
+    enum: {
+      values: ['male', 'female', 'others'],
+      message: `{VALUE} is not a valid gender type`
+    },
+    set: value => value.toLowerCase(), // Convert to lowercase
+    default: 'others' // Provide a default value
+       
+    },
     phone: {
         type: String,
-        required: true,
-        minLength: [10, "Phone number must be at least 10 characters long"],
+        minLength: 10,
     },
     aboutMe: {
         type: String,
-        required: true,
-        minLength: [4, "About me must be at least 4 characters long"],
+        minLength: 5,
     },
-    avatar:{
-        public_id:{
+    avatar: {
+        public_id: {
+            type: String,
+        },
+        url: {
             type: String,
             required: true,
         },
-        url:{
-            type: String,
-            required: true,
-        }
     },
-    resume:{
-        public_id:{
+    resume: {
+        public_id: {
+            type: String,
+        },
+        url: {
             type: String,
             required: true,
         },
-        url:{
-            type: String,
-            required: true,
-        }
     },
-    portfolio:{
-       type: String,
-       required: [true, "Portfolio link is required"],
+    portfolio: {
+        type: String,
     },
-    githubUrl:String,
-    linkedInUrl:String,
+    githubUrl: {
+        type: String,
+        default: "",
+    },
+    linkedInUrl: {
+        type: String,
+        default: "",
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
-    
+});
 
-})
-
-// Existing methods remain the same
+// Generate JWT
 userSchema.methods.getJWT = async function () {
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined in the environment variables");
+    }
     const user = this;
-    const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '3d' });
+    const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "3d" });
     return token;
-  }
+};
 
+// Validate Password
 userSchema.methods.validatePassword = async function (passwordInputByUser) {
     const user = this;
     const passwordHash = user.password;
     const isPasswordValidate = await bcrypt.compare(passwordInputByUser, passwordHash);
     return isPasswordValidate;
-  }
-  
+};
 
-
-const User= mongoose.model("User", userSchema);
-module.exports=User; // Export the model for use in other files
+const User = mongoose.model("User", userSchema);
+module.exports = User;

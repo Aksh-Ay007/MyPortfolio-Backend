@@ -1,6 +1,7 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const Message = require("../models/messageSchema"); // Import the Message model
+const { userAuth } = require("../middlewares/auth"); // Import the userAuth middleware
 
 const messageRouter = express.Router();
 
@@ -44,7 +45,7 @@ messageRouter.post('/send', async (req, res) => {
 });
 
 
-messageRouter.get('/getAllMessages', async (req, res) => {
+messageRouter.get('/getAllMessages',userAuth, async (req, res) => {
 
     try {
         const messages = await Message.find({}).sort({ createdAt: -1 });
@@ -61,7 +62,7 @@ messageRouter.get('/getAllMessages', async (req, res) => {
     }
 })
 
-messageRouter.delete('/deleteMessage/:id', async (req, res) => {
+messageRouter.delete('/deleteMessage/:id', userAuth,async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -89,4 +90,5 @@ messageRouter.delete('/deleteMessage/:id', async (req, res) => {
         });
     }
 });
+
 module.exports = messageRouter;
